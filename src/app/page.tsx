@@ -584,7 +584,7 @@ export default function Home() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/5541997440255"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition-all text-lg"

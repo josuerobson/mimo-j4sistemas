@@ -90,7 +90,7 @@ export default function ContatoPage() {
                 </a>
 
                 <a
-                  href="tel:+5511999999999"
+                  href="tel:+5541997440255"
                   className="flex items-start gap-4 group"
                 >
                   <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500/20 transition-colors">
@@ -99,7 +99,7 @@ export default function ContatoPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">Telefone</h3>
                     <p className="text-gray-400 text-sm group-hover:text-emerald-400 transition-colors">
-                      (11) 99999-9999
+                      (41) 99744-0255
                     </p>
                   </div>
                 </a>
@@ -137,7 +137,7 @@ export default function ContatoPage() {
 
               {/* WhatsApp CTA */}
               <a
-                href="https://wa.me/5511999999999?text=Olá! Gostaria de solicitar um orçamento."
+                href="https://wa.me/5541997440255?text=Olá! Gostaria de solicitar um orçamento."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 bg-emerald-600/20 border border-emerald-600/30 rounded-xl hover:bg-emerald-600/30 transition-colors"
@@ -236,7 +236,7 @@ export default function ContatoPage() {
                           value={formData.phone}
                           onChange={handleChange}
                           className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                          placeholder="(11) 99999-9999"
+                          placeholder="(41) 99744-0255"
                         />
                       </div>
                       <div>

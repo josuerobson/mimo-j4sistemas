@@ -60,11 +60,11 @@ export default function Footer() {
                 contato@j4sistema.com.br
               </a>
               <a
-                href="tel:+5511999999999"
+href="tel:+5541997440255"
                 className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors text-sm"
               >
                 <Phone className="w-4 h-4" />
-                (11) 99999-9999
+(41) 99744-0255
               </a>
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <MapPin className="w-4 h-4 flex-shrink-0" />

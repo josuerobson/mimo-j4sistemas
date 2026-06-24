@@ -139,7 +139,7 @@ export default function RootLayout({
               },
               contactPoint: {
                 "@type": "ContactPoint",
-                telephone: "+55-11-99999-9999",
+                telephone: "+55-41-99744-0255",
                 contactType: "customer service",
                 email: "contato@j4sistema.com.br",
               },
