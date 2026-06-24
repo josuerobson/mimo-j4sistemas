@@ -37,10 +37,10 @@ export default function Header() {
             </div>
             <div>
               <span className="text-xl font-bold text-white">
-                J4<span className="text-blue-400">Sistema</span>
+                J4 <span className="text-blue-400">Sistemas</span>
               </span>
               <p className="text-[10px] text-gray-400 -mt-1 tracking-wider uppercase">
-                Software Personalizado
+                Softwares Personalizados
               </p>
             </div>
           </Link>

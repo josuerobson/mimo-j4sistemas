@@ -43,7 +43,7 @@ export default function Footer() {
                 <Code2 className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                J4<span className="text-blue-400">Sistema</span>
+                J4 <span className="text-blue-400">Sistemas</span>
               </span>
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed">
@@ -161,7 +161,7 @@ href="tel:+5541997440255"
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm text-center sm:text-left">
-              © {new Date().getFullYear()} J4 Sistema. Todos os direitos
+              © {new Date().getFullYear()} J4 Sistemas. Todos os direitos
               reservados. Desenvolvimento de software personalizado em São Paulo.
             </p>
             <button

@@ -1,0 +1,140 @@
+# =============================================================
+#  CLINERULES — Geração Automática de Imagens
+# =============================================================
+
+Você NÃO gera imagens diretamente. Quando o projeto precisar de
+qualquer imagem (fotos, banners, ícones, ilustrações, backgrounds,
+favicon, og:image), siga OBRIGATORIAMENTE este fluxo:
+
+---
+
+## 1. INVENTÁRIO
+
+Antes de escrever qualquer linha de HTML/CSS, analise TODO o
+projeto e liste cada imagem necessária:
+- Tags <img> de todas as páginas
+- Backgrounds com url() no CSS
+- Favicon
+- Open Graph image (og:image)
+- Ícones decorativos
+- Banners, heros, cards com fotos
+- Depoimentos (fotos de pessoas)
+- Galerias
+- Qualquer elemento visual do site
+
+---
+
+## 2. CRIAR generate-images.js
+
+Crie o arquivo `generate-images.js` na raiz do projeto com o
+código EXATO abaixo. NÃO altere a lógica de download — apenas
+popule o array `images[]` com as imagens inventariadas no passo 1.
+
+O script completo deve ser:
+
+```javascript
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+// =============================================
+//  ARRAY DE IMAGENS — POPULADO PELO AGENTE
+// =============================================
+const images = [
+  {
+    name: 'exemplo.jpg',
+    prompt: 'Detailed prompt in English here, minimum 20 words, describing composition, style, colors, lighting, and mood'
+  }
+  // adicione quantos objetos forem necessários
+];
+
+// =============================================
+//  CONFIGURAÇÃO
+// =============================================
+const OUTPUT_DIR = path.join(__dirname, 'assets', 'img');
+const DELAY_MS = 2000;
+
+if (!fs.existsSync(OUTPUT_DIR)) {
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+}
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+function downloadImage(prompt, filename) {
+  return new Promise((resolve, reject) => {
+    const encoded = encodeURIComponent(prompt);
+    const seed = Math.floor(Math.random() * 999999);
+    const url = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${seed}`;
+    const filePath = path.join(OUTPUT_DIR, filename);
+
+    if (fs.existsSync(filePath)) {
+      console.log(`⏭  Pulando (já existe): ${filename}`);
+      return resolve();
+    }
+
+    console.log(`\n⬇  Baixando: ${filename}`);
+    console.log(`   Prompt: ${prompt.substring(0, 100)}...`);
+
+    const handleResponse = (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        https.get(res.headers.location, handleResponse).on('error', reject);
+        return;
+      }
+
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode} para ${filename}`));
+      }
+
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        if (buffer.length < 1000) {
+          return reject(new Error(`Arquivo muito pequeno (${buffer.length} bytes) para ${filename}`));
+        }
+        fs.writeFileSync(filePath, buffer);
+        const sizeKB = (buffer.length / 1024).toFixed(1);
+        console.log(`✅ Salvo: ${filename} (${sizeKB} KB)`);
+        resolve();
+      });
+    };
+
+    https.get(url, handleResponse).on('error', reject);
+  });
+}
+
+(async () => {
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`🎨  GERADOR DE IMAGENS — ${images.length} itens`);
+  console.log(`📁  Destino: ${OUTPUT_DIR}`);
+  console.log(`${'='.repeat(50)}\n`);
+
+  let success = 0;
+  let failed = 0;
+
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    console.log(`[${i + 1}/${images.length}]`);
+    try {
+      await downloadImage(img.prompt, img.name);
+      success++;
+    } catch (err) {
+      console.error(`❌ FALHOU: ${img.name} — ${err.message}`);
+      failed++;
+    }
+    if (i < images.length - 1) await sleep(DELAY_MS);
+  }
+
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`📊  Resultado: ${success} OK, ${failed} falhas`);
+
+  if (failed > 0) {
+    console.log(`⚠️  Imagens que falharam:`);
+    images.forEach(img => {
+      const fp = path.join(OUTPUT_DIR, img.name);
+      if (!fs.existsSync(fp)) console.log(`   → ${img.name}`);
+    });
+  }
+
+  console.log(`${'='.repeat(50)}\n`);
+})();
