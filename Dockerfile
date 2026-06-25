@@ -16,6 +16,11 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Accept build args from Easypanel
+ARG DATABASE_URL
+ARG JWT_SECRET
+ARG NEXT_PUBLIC_SITE_URL
+
 # Generate Prisma client before building
 RUN npx prisma generate
 
@@ -27,6 +32,14 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Pass build args as runtime env vars
+ARG DATABASE_URL
+ARG JWT_SECRET
+ARG NEXT_PUBLIC_SITE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+ENV JWT_SECRET=${JWT_SECRET}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
