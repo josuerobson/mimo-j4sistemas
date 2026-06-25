@@ -50,17 +50,20 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
+# Copy standalone output (includes its own minimal node_modules)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy Prisma schema and migrations for runtime
 COPY --from=builder /app/prisma ./prisma
+
+# Copy Prisma client and CLI from builder AFTER standalone (so they don't get overwritten)
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
-# Install prisma CLI in runner to ensure correct version is available
-RUN npm install --no-save prisma@6
+# Install missing transitive deps for Prisma CLI (e.g. 'effect' module)
+RUN npm install --no-save effect @prisma/config
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
