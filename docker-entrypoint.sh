@@ -5,7 +5,8 @@ echo "⏳ Aguardando banco de dados..."
 sleep 3
 
 echo "🔄 Executando migrations do Prisma..."
-./node_modules/.bin/prisma migrate deploy
+node node_modules/prisma/build/index.js migrate deploy
 
-echo "✅ Migrations concluídas. Iniciando aplicação..."
+echo "✅ Migrations concluídas."
+echo "🚀 Iniciando aplicação..."
 exec "$@"
