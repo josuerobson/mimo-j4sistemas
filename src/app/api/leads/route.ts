@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const leads = getLeads();
+  const leads = await getLeads();
   return NextResponse.json(leads);
 }
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const lead = addLead({ name, email, phone, company, service, budget, message });
+    const lead = await addLead({ name, email, phone, company, service, budget, message });
     return NextResponse.json(lead, { status: 201 });
   } catch {
     return NextResponse.json(
@@ -42,7 +42,7 @@ export async function PATCH(request: Request) {
 
   try {
     const { id, status } = await request.json();
-    const lead = updateLeadStatus(id, status);
+    const lead = await updateLeadStatus(id, status);
     if (!lead) {
       return NextResponse.json({ error: "Lead não encontrado" }, { status: 404 });
     }
@@ -63,7 +63,7 @@ export async function DELETE(request: Request) {
 
   try {
     const { id } = await request.json();
-    const success = deleteLead(id);
+    const success = await deleteLead(id);
     if (!success) {
       return NextResponse.json({ error: "Lead não encontrado" }, { status: 404 });
     }
