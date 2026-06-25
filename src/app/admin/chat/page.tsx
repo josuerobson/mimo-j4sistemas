@@ -59,22 +59,47 @@ export default function AdminChatPage() {
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchConversations = () => {
     setLoading(true);
+    setError(null);
     fetch("/api/chat/admin")
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({ error: "Erro desconhecido" }));
+          throw new Error(err.error || `HTTP ${r.status}`);
+        }
+        return r.json();
+      })
       .then((data) => {
-        if (Array.isArray(data)) setConversations(data);
+        if (Array.isArray(data)) {
+          setConversations(data);
+        } else {
+          console.warn("Expected array, got:", data);
+          setConversations([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error("Failed to fetch conversations:", err);
+        setError(err.message);
+        setLoading(false);
+      });
   };
 
   const fetchConversation = async (id: string) => {
-    const res = await fetch(`/api/chat?conversationId=${id}`);
-    const data = await res.json();
-    if (data.conversation) setSelected(data.conversation as Conversation);
+    try {
+      const res = await fetch(`/api/chat?conversationId=${id}`);
+      const data = await res.json();
+      if (data.conversation) {
+        setSelected(data.conversation as Conversation);
+      } else {
+        console.warn("No conversation found for id:", id);
+      }
+    } catch (err) {
+      console.error("Failed to fetch conversation:", err);
+    }
   };
 
   useEffect(() => {
@@ -144,6 +169,17 @@ export default function AdminChatPage() {
             {loading ? (
               <div className="text-center py-8">
                 <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-gray-500 text-xs mt-2">Carregando conversas...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-400 text-sm">⚠️ {error}</p>
+                <button
+                  onClick={fetchConversations}
+                  className="mt-2 text-xs text-blue-400 hover:underline"
+                >
+                  Tentar novamente
+                </button>
               </div>
             ) : conversations.length === 0 ? (
               <div className="text-center py-12">

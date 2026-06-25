@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
 
-// GET — Admin fetches all active conversations
+// GET — Admin fetches all conversations (active + waiting + resolved)
 export async function GET() {
   const user = await verifyAuth();
   if (!user) {
@@ -11,7 +11,6 @@ export async function GET() {
 
   try {
     const conversations = await prisma.chatConversation.findMany({
-      where: { status: { not: "resolved" } },
       include: {
         messages: {
           orderBy: { createdAt: "asc" },

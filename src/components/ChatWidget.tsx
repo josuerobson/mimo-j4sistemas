@@ -37,8 +37,8 @@ export default function ChatWidget() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    if (!open || !visitorId) return;
+  const loadConversation = () => {
+    if (!visitorId) return;
     fetch(`/api/chat?visitorId=${visitorId}`)
       .then((r) => r.json())
       .then((data) => {
@@ -54,6 +54,14 @@ export default function ChatWidget() {
         }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    loadConversation();
+    // Poll for new messages every 5 seconds when chat is open
+    const interval = setInterval(loadConversation, 5000);
+    return () => clearInterval(interval);
   }, [open, visitorId]);
 
   const sendMessage = async () => {
