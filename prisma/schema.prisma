@@ -35,3 +35,41 @@ model Lead {
 
   @@map("leads")
 }
+
+model ChatConversation {
+  id        String   @id @default(cuid())
+  visitorId String
+  visitorName String?
+  visitorEmail String?
+  status    String   @default("active") // active, waiting_human, resolved
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  ChatMessage[]
+
+  @@index([visitorId])
+  @@index([status])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // visitor, ai, human
+  content        String
+  adminName      String?
+  createdAt      DateTime @default(now())
+
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("chat_messages")
+}
+
+model ChatSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("chat_settings")
+}

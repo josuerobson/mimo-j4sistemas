@@ -17,6 +17,7 @@ import {
   Code2,
   BarChart3,
   FolderOpen,
+  MessagesSquare,
 } from "lucide-react";
 
 interface MenuItem {
@@ -53,6 +54,11 @@ const menuItems: MenuItem[] = [
     label: "Mensagens",
     icon: <MessageSquare className="w-5 h-5" />,
     href: "/admin/mensagens",
+  },
+  {
+    label: "Chat",
+    icon: <MessagesSquare className="w-5 h-5" />,
+    href: "/admin/chat",
   },
   {
     label: "Relatórios",
