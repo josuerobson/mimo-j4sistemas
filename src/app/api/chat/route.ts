@@ -50,11 +50,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // Load custom AI prompt if set
-    const promptSetting = await prisma.chatSetting.findUnique({
-      where: { key: "ai_system_prompt" },
-    });
-
     // Build conversation history for AI
     const history = [
       ...conversation.messages.map((m) => ({
@@ -64,10 +59,7 @@ export async function POST(request: Request) {
       { role: "visitor", content: message },
     ];
 
-    const aiResponse = await generateAIResponse(
-      history,
-      promptSetting?.value
-    );
+    const aiResponse = await generateAIResponse(history);
 
     // Save AI response
     await prisma.chatMessage.create({
