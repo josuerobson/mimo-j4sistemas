@@ -1,4 +1,4 @@
-// AI Chat Service — Pollinations Text API (free, no API key)
+// AI Chat Service — Supports configurable API (OpenAI, Anthropic, Google, etc.)
 
 const SITE_CONTEXT = `
 ## Sobre a J4 Sistemas
@@ -29,7 +29,33 @@ Somos uma empresa especializada em desenvolvimento de software, aplicativos mobi
 - Investimento mínimo: R$ 5.000
 `;
 
-const DEFAULT_SYSTEM_PROMPT = `Você é o assistente virtual da J4 Sistemas.
+export interface AIConfig {
+  apiUrl: string;
+  apiKey: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  topP: number;
+  frequencyPenalty: number;
+  presencePenalty: number;
+  systemPrompt: string;
+}
+
+export interface AIResponse {
+  message: string;
+  shouldHandoff: boolean;
+}
+
+const DEFAULT_CONFIG: AIConfig = {
+  apiUrl: "https://text.pollinations.ai/openai",
+  apiKey: "",
+  model: "openai",
+  temperature: 0.7,
+  maxTokens: 1024,
+  topP: 1,
+  frequencyPenalty: 0,
+  presencePenalty: 0,
+  systemPrompt: `Você é o assistente virtual da J4 Sistemas.
 
 Regras:
 - Responda apenas sobre os serviços e informações da empresa
@@ -47,34 +73,79 @@ IMPORTANTE — Quando deve acionar um humano:
 Quando precisar acionar humano, comece a resposta com: [HUMAN_HANDOFF]
 
 Contexto da empresa:
-${SITE_CONTEXT}`;
+${SITE_CONTEXT}`,
+};
 
-export interface AIResponse {
-  message: string;
-  shouldHandoff: boolean;
+export async function loadAIConfig(): Promise<AIConfig> {
+  try {
+    const { prisma } = await import("./prisma");
+    
+    const settings = await prisma.chatSetting.findMany();
+    const map: Record<string, string> = {};
+    settings.forEach((s: { key: string; value: string }) => (map[s.key] = s.value));
+
+    // Load active prompts and append to system prompt
+    const activePrompts = await prisma.chatPrompt.findMany({
+      where: { isActive: true },
+      orderBy: { isDefault: "desc" },
+    });
+
+    let extraPrompts = "";
+    if (activePrompts.length > 0) {
+      extraPrompts = "\n\n## Instruções adicionais do administrador:\n" +
+        activePrompts.map((p: { name: string; content: string }) => `### ${p.name}\n${p.content}`).join("\n\n");
+    }
+
+    const config: AIConfig = {
+      apiUrl: map["ai_api_url"] || DEFAULT_CONFIG.apiUrl,
+      apiKey: map["ai_api_key"] || DEFAULT_CONFIG.apiKey,
+      model: map["ai_model"] || DEFAULT_CONFIG.model,
+      temperature: parseFloat(map["ai_temperature"] || String(DEFAULT_CONFIG.temperature)),
+      maxTokens: parseInt(map["ai_max_tokens"] || String(DEFAULT_CONFIG.maxTokens), 10),
+      topP: parseFloat(map["ai_top_p"] || String(DEFAULT_CONFIG.topP)),
+      frequencyPenalty: parseFloat(map["ai_frequency_penalty"] || String(DEFAULT_CONFIG.frequencyPenalty)),
+      presencePenalty: parseFloat(map["ai_presence_penalty"] || String(DEFAULT_CONFIG.presencePenalty)),
+      systemPrompt: (map["ai_system_prompt"] || DEFAULT_CONFIG.systemPrompt) + extraPrompts,
+    };
+
+    return config;
+  } catch {
+    return DEFAULT_CONFIG;
+  }
 }
 
 export async function generateAIResponse(
   conversationHistory: { role: string; content: string }[],
-  customPrompt?: string
+  configOverride?: Partial<AIConfig>
 ): Promise<AIResponse> {
-  const systemPrompt = customPrompt || DEFAULT_SYSTEM_PROMPT;
+  const config = { ...(await loadAIConfig()), ...configOverride };
 
   try {
-    const response = await fetch("https://text.pollinations.ai/openai", {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (config.apiKey) {
+      headers["Authorization"] = `Bearer ${config.apiKey}`;
+    }
+
+    const response = await fetch(config.apiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
-        model: "openai",
+        model: config.model,
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: config.systemPrompt },
           ...conversationHistory.map((m) => ({
             role: m.role === "visitor" ? "user" : "assistant",
             content: m.content,
           })),
         ],
+        temperature: config.temperature,
+        max_tokens: config.maxTokens,
+        top_p: config.topP,
+        frequency_penalty: config.frequencyPenalty,
+        presence_penalty: config.presencePenalty,
         seed: Math.floor(Math.random() * 999999),
-        jsonMode: false,
       }),
     });
 

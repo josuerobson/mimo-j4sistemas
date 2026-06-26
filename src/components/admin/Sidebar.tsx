@@ -58,7 +58,11 @@ const menuItems: MenuItem[] = [
   {
     label: "Chat",
     icon: <MessagesSquare className="w-5 h-5" />,
-    href: "/admin/chat",
+    children: [
+      { label: "Conversas", href: "/admin/chat" },
+      { label: "Integração IA", href: "/admin/chat/integracao" },
+      { label: "Prompts", href: "/admin/chat/prompts" },
+    ],
   },
   {
     label: "Relatórios",
