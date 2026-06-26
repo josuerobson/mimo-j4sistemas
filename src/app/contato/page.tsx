@@ -94,7 +94,7 @@ export default function ContatoPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">Email</h3>
                     <p className="text-gray-400 text-sm group-hover:text-blue-400 transition-colors">
-                      contato@j4sistema.com.br
+                      comercial@j4sistema.com.br
                     </p>
                   </div>
                 </a>
@@ -121,7 +121,7 @@ export default function ContatoPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">Endereço</h3>
                     <p className="text-gray-400 text-sm">
-                      São Paulo, SP - Brasil
+                      Curitiba- PR - Brasil
                       <br />
                       Atendimento em todo o Brasil
                     </p>
