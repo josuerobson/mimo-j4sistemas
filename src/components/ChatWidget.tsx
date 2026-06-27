@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, User, Phone } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -29,6 +29,13 @@ export default function ChatWidget() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [waitingHuman, setWaitingHuman] = useState(false);
   const [showBadge, setShowBadge] = useState(true);
+  const [visitorInfo, setVisitorInfo] = useState<{
+    name: string;
+    phone: string;
+  } | null>(null);
+  const [collectingInfo, setCollectingInfo] = useState(true);
+  const [visitorName, setVisitorName] = useState("");
+  const [visitorPhone, setVisitorPhone] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   const visitorId = getVisitorId();
@@ -51,6 +58,10 @@ export default function ChatWidget() {
             }))
           );
           setWaitingHuman(data.conversation.status === "waiting_human");
+          if (data.conversation.messages.length > 0) {
+            setCollectingInfo(false);
+            setVisitorInfo({ name: "", phone: "" });
+          }
         }
       })
       .catch(() => {});
@@ -58,11 +69,89 @@ export default function ChatWidget() {
 
   useEffect(() => {
     if (!open) return;
-    loadConversation();
-    // Poll for new messages every 5 seconds when chat is open
+    // Check if already has a conversation
+    if (!visitorId) return;
+    fetch(`/api/chat?visitorId=${visitorId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.conversation && data.conversation.messages.length > 0) {
+          setCollectingInfo(false);
+          setVisitorInfo({ name: "", phone: "" });
+          setConversationId(data.conversation.id);
+          setMessages(
+            data.conversation.messages.map((m: ChatMessage) => ({
+              ...m,
+              createdAt: m.createdAt,
+            }))
+          );
+          setWaitingHuman(data.conversation.status === "waiting_human");
+        }
+      })
+      .catch(() => {});
+  }, [open, visitorId]);
+
+  useEffect(() => {
+    if (!open || collectingInfo) return;
     const interval = setInterval(loadConversation, 5000);
     return () => clearInterval(interval);
-  }, [open, visitorId]);
+  }, [open, visitorId, collectingInfo]);
+
+  const submitVisitorInfo = async () => {
+    if (!visitorName.trim() || !visitorPhone.trim()) return;
+    setVisitorInfo({ name: visitorName.trim(), phone: visitorPhone.trim() });
+    setCollectingInfo(false);
+
+    // Send initial greeting to create conversation + lead
+    const greeting = `Olá! Meu nome é ${visitorName.trim()} e meu WhatsApp é ${visitorPhone.trim()}.`;
+    setMessages([
+      {
+        id: crypto.randomUUID(),
+        role: "visitor",
+        content: greeting,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+    setLoading(true);
+    setShowBadge(false);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId,
+          name: visitorName.trim(),
+          phone: visitorPhone.trim(),
+          message: greeting,
+        }),
+      });
+      const data = await res.json();
+      if (data.conversationId) setConversationId(data.conversationId);
+      if (data.message) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "ai",
+            content: data.message,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      }
+      if (data.waitingHuman) setWaitingHuman(true);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "ai",
+          content: "Erro ao conectar. Tente novamente.",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    }
+    setLoading(false);
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
@@ -73,7 +162,12 @@ export default function ChatWidget() {
     const tempId = crypto.randomUUID();
     setMessages((prev) => [
       ...prev,
-      { id: tempId, role: "visitor", content: msg, createdAt: new Date().toISOString() },
+      {
+        id: tempId,
+        role: "visitor",
+        content: msg,
+        createdAt: new Date().toISOString(),
+      },
     ]);
     setLoading(true);
 
@@ -85,6 +179,8 @@ export default function ChatWidget() {
           visitorId,
           message: msg,
           conversationId,
+          name: visitorInfo?.name,
+          phone: visitorInfo?.phone,
         }),
       });
       const data = await res.json();
@@ -148,7 +244,9 @@ export default function ChatWidget() {
                   J4 Sistemas
                 </h3>
                 <p className="text-blue-100 text-xs">
-                  {waitingHuman
+                  {collectingInfo
+                    ? "👋 Bem-vindo!"
+                    : waitingHuman
                     ? "⏳ Aguardando atendente..."
                     : "🟢 Assistente virtual online"}
                 </p>
@@ -162,86 +260,136 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="w-8 h-8 text-blue-400" />
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            {collectingInfo ? (
+              /* Visitor Info Form */
+              <div className="p-6 space-y-5">
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle className="w-8 h-8 text-blue-400" />
+                  </div>
+                  <h4 className="text-white font-semibold text-lg mb-2">
+                    Olá! 👋
+                  </h4>
+                  <p className="text-gray-400 text-sm">
+                    Para iniciar o atendimento, informe seus dados:
+                  </p>
                 </div>
-                <h4 className="text-white font-semibold mb-2">
-                  Olá! 👋
-                </h4>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Sou o assistente virtual da J4 Sistemas. Como posso
-                  ajudar?
-                </p>
-              </div>
-            )}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${
-                  msg.role === "visitor" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.role === "visitor"
-                      ? "bg-blue-600 text-white rounded-br-md"
-                      : msg.role === "human"
-                      ? "bg-emerald-600/20 border border-emerald-600/30 text-emerald-200 rounded-bl-md"
-                      : "bg-gray-800 border border-gray-700 text-gray-200 rounded-bl-md"
-                  }`}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                    <User className="w-4 h-4" />
+                    Seu nome
+                  </label>
+                  <input
+                    type="text"
+                    value={visitorName}
+                    onChange={(e) => setVisitorName(e.target.value)}
+                    placeholder="Como posso te chamar?"
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter")
+                        document.getElementById("chat-phone")?.focus();
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                    <Phone className="w-4 h-4" />
+                    WhatsApp
+                  </label>
+                  <input
+                    id="chat-phone"
+                    type="tel"
+                    value={visitorPhone}
+                    onChange={(e) => setVisitorPhone(e.target.value)}
+                    placeholder="(00) 00000-0000"
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitVisitorInfo();
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={submitVisitorInfo}
+                  disabled={!visitorName.trim() || !visitorPhone.trim()}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl transition-colors font-medium text-sm"
                 >
-                  {msg.role === "human" && msg.adminName && (
-                    <p className="text-[10px] text-emerald-400 font-semibold mb-1">
-                      👤 {msg.adminName}
-                    </p>
-                  )}
-                  {msg.content}
-                </div>
+                  <MessageCircle className="w-4 h-4" />
+                  Iniciar Atendimento
+                </button>
               </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-800 border border-gray-700 rounded-2xl rounded-bl-md px-4 py-3">
-                  <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-                </div>
+            ) : (
+              /* Messages */
+              <div className="p-4 space-y-3">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${
+                      msg.role === "visitor" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                        msg.role === "visitor"
+                          ? "bg-blue-600 text-white rounded-br-md"
+                          : msg.role === "human"
+                          ? "bg-emerald-600/20 border border-emerald-600/30 text-emerald-200 rounded-bl-md"
+                          : "bg-gray-800 border border-gray-700 text-gray-200 rounded-bl-md"
+                      }`}
+                    >
+                      {msg.role === "human" && msg.adminName && (
+                        <p className="text-[10px] text-emerald-400 font-semibold mb-1">
+                          👤 {msg.adminName}
+                        </p>
+                      )}
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-800 border border-gray-700 rounded-2xl rounded-bl-md px-4 py-3">
+                      <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                    </div>
+                  </div>
+                )}
+                <div ref={endRef} />
               </div>
             )}
-            <div ref={endRef} />
           </div>
 
           {/* Input */}
-          <div className="border-t border-gray-700 p-3 flex-shrink-0">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                sendMessage();
-              }}
-              className="flex gap-2"
-            >
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={
-                  waitingHuman
-                    ? "Aguardando atendente..."
-                    : "Digite sua mensagem..."
-                }
-                disabled={loading}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="w-10 h-10 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl flex items-center justify-center text-white transition-colors flex-shrink-0"
+          {!collectingInfo && (
+            <div className="border-t border-gray-700 p-3 flex-shrink-0">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendMessage();
+                }}
+                className="flex gap-2"
               >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={
+                    waitingHuman
+                      ? "Aguardando atendente..."
+                      : "Digite sua mensagem..."
+                  }
+                  disabled={loading}
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !input.trim()}
+                  className="w-10 h-10 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl flex items-center justify-center text-white transition-colors flex-shrink-0"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
     </>

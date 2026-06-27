@@ -6,7 +6,7 @@ import { generateAIResponse } from "@/lib/chat-ai";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { visitorId, name, email, message } = body;
+    const { visitorId, name, email, phone, message } = body;
 
     if (!visitorId || !message) {
       return NextResponse.json(
@@ -22,11 +22,30 @@ export async function POST(request: Request) {
     });
 
     if (!conversation) {
+      // Create lead from visitor info
+      let leadId: string | null = null;
+      if (name && phone) {
+        const lead = await prisma.lead.create({
+          data: {
+            name,
+            phone,
+            email: email || "",
+            service: "chat-site",
+            message: message.substring(0, 200),
+            status: "novo",
+            source: "chat",
+          },
+        });
+        leadId = lead.id;
+      }
+
       conversation = await prisma.chatConversation.create({
         data: {
           visitorId,
           visitorName: name || null,
           visitorEmail: email || null,
+          visitorPhone: phone || null,
+          leadId,
         },
         include: { messages: true },
       });
@@ -134,6 +153,10 @@ export async function GET(request: Request) {
       conversation: {
         id: conversation.id,
         status: conversation.status,
+        visitorName: conversation.visitorName,
+        visitorEmail: conversation.visitorEmail,
+        visitorPhone: conversation.visitorPhone,
+        leadId: conversation.leadId,
         messages: conversation.messages.map((m) => ({
           id: m.id,
           role: m.role,

@@ -13,6 +13,8 @@ import {
   Clock,
   MessageCircle,
   X,
+  Phone,
+  ExternalLink,
 } from "lucide-react";
 
 interface ChatMessage {
@@ -28,6 +30,14 @@ interface Conversation {
   visitorId: string;
   visitorName: string | null;
   visitorEmail: string | null;
+  visitorPhone: string | null;
+  leadId: string | null;
+  lead?: {
+    id: string;
+    name: string;
+    status: string;
+    phone: string;
+  } | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -203,16 +213,26 @@ export default function AdminChatPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-white">
+                      <span className="text-sm font-medium text-white truncate mr-2">
                         {conv.visitorName || "Visitante anônimo"}
+                        {conv.visitorPhone && (
+                          <span className="text-[10px] text-gray-500 ml-1 font-normal">
+                            📱 {conv.visitorPhone}
+                          </span>
+                        )}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${cfg.color}`}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${cfg.color} flex-shrink-0`}
                       >
                         {cfg.icon}
                         {cfg.label}
                       </span>
                     </div>
+                    {conv.leadId && conv.lead && (
+                      <p className="text-[10px] text-blue-400/70 truncate mb-0.5">
+                        🏷️ Lead: {conv.lead.name}
+                      </p>
+                    )}
                     {lastMsg && (
                       <p className="text-xs text-gray-500 truncate">
                         {lastMsg.role === "visitor" ? "👤" : lastMsg.role === "ai" ? "🤖" : "👨‍💼"}{" "}
@@ -252,10 +272,27 @@ export default function AdminChatPage() {
                   <h3 className="font-semibold text-white">
                     {selected.visitorName || "Visitante anônimo"}
                   </h3>
-                  {selected.visitorEmail && (
-                    <p className="text-xs text-gray-500">
-                      {selected.visitorEmail}
-                    </p>
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    {selected.visitorPhone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-3 h-3" />
+                        {selected.visitorPhone}
+                      </span>
+                    )}
+                    {selected.visitorEmail && (
+                      <span>{selected.visitorEmail}</span>
+                    )}
+                  </div>
+                  {selected.leadId && selected.lead && (
+                    <a
+                      href={`/admin/site/leads?highlight=${selected.leadId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1 transition-colors"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Ver lead: {selected.lead.name} ({selected.lead.status})
+                    </a>
                   )}
                 </div>
                 <div className="flex gap-2">

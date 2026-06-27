@@ -14,6 +14,14 @@ export interface Lead {
   source: string;
 }
 
+export interface LeadWithConversations extends Lead {
+  conversations?: {
+    id: string;
+    status: string;
+    messages: { id: string; role: string; content: string; adminName: string | null; createdAt: Date }[];
+  }[];
+}
+
 export async function getLeads(): Promise<Lead[]> {
   const leads = await prisma.lead.findMany({
     orderBy: { createdAt: "desc" },
@@ -31,6 +39,34 @@ export async function getLeads(): Promise<Lead[]> {
     source: l.source,
     createdAt: l.createdAt.toISOString(),
   }));
+}
+
+export async function getLeadById(id: string): Promise<LeadWithConversations | null> {
+  const l = await prisma.lead.findUnique({
+    where: { id },
+    include: {
+      conversations: {
+        include: {
+          messages: { orderBy: { createdAt: "asc" } },
+        },
+      },
+    },
+  });
+  if (!l) return null;
+  return {
+    id: l.id,
+    name: l.name,
+    email: l.email,
+    phone: l.phone,
+    company: l.company ?? "",
+    service: l.service,
+    budget: l.budget ?? "",
+    message: l.message,
+    status: l.status as Lead["status"],
+    source: l.source,
+    createdAt: l.createdAt.toISOString(),
+    conversations: l.conversations,
+  };
 }
 
 export async function addLead(

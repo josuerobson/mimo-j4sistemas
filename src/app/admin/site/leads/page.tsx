@@ -44,6 +44,7 @@ const serviceLabels: Record<string, string> = {
   "aplicativo-mobile": "Aplicativo Mobile",
   "sistema-sob-medida": "Sistema Sob Medida",
   "consultoria-ti": "Consultoria em TI",
+  "chat-site": "Chat do Site",
   outro: "Outro",
 };
 
@@ -62,6 +63,13 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leadDetail, setLeadDetail] = useState<{
+    conversations?: {
+      id: string;
+      status: string;
+      messages: { id: string; role: string; content: string; adminName: string | null; createdAt: string }[];
+    }[];
+  } | null>(null);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   const fetchLeads = () => {
@@ -252,7 +260,13 @@ export default function LeadsPage() {
                     <tr
                       key={lead.id}
                       className="hover:bg-gray-800/30 transition-colors cursor-pointer"
-                      onClick={() => setSelectedLead(lead)}
+                      onClick={() => {
+                        setSelectedLead(lead);
+                        fetch(`/api/leads/${lead.id}`)
+                          .then((r) => r.json())
+                          .then((data) => setLeadDetail(data))
+                          .catch(() => setLeadDetail(null));
+                      }}
                     >
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-white">
@@ -438,6 +452,45 @@ export default function LeadsPage() {
                   {selectedLead.message}
                 </p>
               </div>
+
+              {/* Chat History */}
+              {leadDetail?.conversations && leadDetail.conversations.length > 0 && (
+                <div className="bg-gray-800/50 rounded-xl p-3">
+                  <div className="flex items-center gap-2 text-gray-500 text-xs mb-3">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Histórico do Chat ({leadDetail.conversations.length} conversa{leadDetail.conversations.length > 1 ? "s" : ""})
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {leadDetail.conversations.map((conv) => (
+                      <div key={conv.id} className="space-y-2">
+                        {conv.messages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`flex ${
+                              msg.role === "visitor" ? "justify-start" : "justify-end"
+                            }`}
+                          >
+                            <div
+                              className={`max-w-[85%] px-3 py-2 rounded-xl text-xs ${
+                                msg.role === "visitor"
+                                  ? "bg-gray-700 text-gray-200 rounded-bl-md"
+                                  : msg.role === "human"
+                                  ? "bg-emerald-600/20 border border-emerald-600/30 text-emerald-200 rounded-br-md"
+                                  : "bg-blue-600/20 border border-blue-600/30 text-blue-200 rounded-br-md"
+                              }`}
+                            >
+                              <span className="text-[10px] text-gray-500 block mb-0.5">
+                                {msg.role === "visitor" ? "👤 Visitante" : msg.role === "ai" ? "🤖 IA" : `👨‍💼 ${msg.adminName || "Humano"}`}
+                              </span>
+                              {msg.content}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Status actions */}
               <div className="pt-2">

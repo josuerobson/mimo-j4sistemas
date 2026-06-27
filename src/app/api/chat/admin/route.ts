@@ -17,11 +17,40 @@ export async function GET() {
           take: 5,
         },
         _count: { select: { messages: true } },
+        lead: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            phone: true,
+          },
+        },
       },
       orderBy: { updatedAt: "desc" },
     });
 
-    return NextResponse.json(conversations);
+    return NextResponse.json(
+      conversations.map((c) => ({
+        id: c.id,
+        visitorId: c.visitorId,
+        visitorName: c.visitorName,
+        visitorEmail: c.visitorEmail,
+        visitorPhone: c.visitorPhone,
+        leadId: c.leadId,
+        lead: c.lead,
+        status: c.status,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+        _count: c._count,
+        messages: c.messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          adminName: m.adminName,
+          createdAt: m.createdAt.toISOString(),
+        })),
+      }))
+    );
   } catch (error) {
     console.error("Admin Chat GET Error:", error);
     return NextResponse.json(
