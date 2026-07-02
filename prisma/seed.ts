@@ -75,6 +75,57 @@ async function main() {
   }
   console.log(`✅ ${sampleLeads.length} sample leads created`);
 
+  // Create sample clients
+  const sampleClients = [
+    {
+      name: "Carlos Oliveira",
+      email: "carlos@techvendas.com.br",
+      phone: "(11) 98765-4321",
+      company: "TechVendas",
+      document: "12.345.678/0001-90",
+      address: "Rua Augusta, 500 - Consolação",
+      city: "São Paulo",
+      state: "SP",
+      zipCode: "01305-000",
+      notes: "Cliente prospecto para e-commerce.",
+      status: "prospecto",
+      source: "manual",
+    },
+    {
+      name: "Marina Santos",
+      email: "marina@clinicasaude.com.br",
+      phone: "(21) 99876-5432",
+      company: "Clínica Saúde+",
+      document: "98.765.432/0001-10",
+      address: "Av. Rio Branco, 150 - Centro",
+      city: "Rio de Janeiro",
+      state: "RJ",
+      zipCode: "20040-000",
+      notes: "App de agendamento em negociação.",
+      status: "ativo",
+      source: "manual",
+    },
+    {
+      name: "Roberto Lima",
+      email: "roberto@logexpress.com.br",
+      phone: "(31) 98765-1234",
+      company: "LogExpress",
+      document: "11.222.333/0001-44",
+      address: "Rua Curitiba, 800 - Savassi",
+      city: "Belo Horizonte",
+      state: "MG",
+      zipCode: "30140-100",
+      notes: "Sistema de rastreamento em desenvolvimento.",
+      status: "ativo",
+      source: "manual",
+    },
+  ];
+
+  for (const client of sampleClients) {
+    await prisma.client.create({ data: client });
+  }
+  console.log(`✅ ${sampleClients.length} sample clients created`);
+
   console.log("🎉 Seeding complete!");
 }
 
