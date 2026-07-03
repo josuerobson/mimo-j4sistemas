@@ -68,6 +68,8 @@ export async function POST(request: Request) {
       };
     }
 
+    console.log("[InfinitiPay] Payload:", JSON.stringify(payload, null, 2));
+
     const res = await fetch("https://api.checkout.infinitepay.io/links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -75,6 +77,9 @@ export async function POST(request: Request) {
     });
 
     const data = await res.json().catch(() => null);
+
+    console.log("[InfinitiPay] Response status:", res.status);
+    console.log("[InfinitiPay] Response body:", JSON.stringify(data, null, 2));
 
     if (!res.ok) {
       return NextResponse.json(

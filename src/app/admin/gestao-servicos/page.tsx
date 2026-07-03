@@ -93,6 +93,7 @@ export default function ServiceManagementPage() {
     slug: string;
   } | null>(null);
   const [invoiceError, setInvoiceError] = useState<string | null>(null);
+  const [invoiceErrorDetails, setInvoiceErrorDetails] = useState<string | null>(null);
 
   const fetchServices = () => {
     setLoading(true);
@@ -219,6 +220,7 @@ export default function ServiceManagementPage() {
     setGeneratingInvoice(true);
     setInvoiceResult(null);
     setInvoiceError(null);
+    setInvoiceErrorDetails(null);
 
     try {
       const res = await fetch("/api/infinitipay/create-link", {
@@ -234,6 +236,9 @@ export default function ServiceManagementPage() {
       const data = await res.json();
       if (!res.ok) {
         setInvoiceError(data.error || "Erro ao gerar fatura");
+        setInvoiceErrorDetails(
+          data.details ? JSON.stringify(data.details, null, 2) : null
+        );
       } else if (data.link) {
         setInvoiceResult({ link: data.link, slug: data.slug || "" });
       } else {
@@ -250,6 +255,7 @@ export default function ServiceManagementPage() {
     setInvoiceService(null);
     setInvoiceResult(null);
     setInvoiceError(null);
+    setInvoiceErrorDetails(null);
   };
 
   const formatCurrency = (value: number) => {
@@ -829,9 +835,16 @@ export default function ServiceManagementPage() {
             </div>
 
             {invoiceError && (
-              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                {invoiceError}
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  {invoiceError}
+                </div>
+                {invoiceErrorDetails && (
+                  <pre className="text-xs bg-red-500/5 p-2 rounded-lg overflow-auto max-h-32 text-red-300">
+                    {JSON.stringify(invoiceErrorDetails, null, 2)}
+                  </pre>
+                )}
               </div>
             )}
 
