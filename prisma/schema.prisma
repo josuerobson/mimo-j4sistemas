@@ -131,3 +131,11 @@ model ChatPrompt {
 
   @@map("chat_prompts")
 }
+
+model WhatsappSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("whatsapp_settings")
+}

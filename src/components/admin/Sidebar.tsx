@@ -72,7 +72,9 @@ const menuItems: MenuItem[] = [
   {
     label: "Configurações",
     icon: <Settings className="w-5 h-5" />,
-    href: "/admin/configuracoes",
+    children: [
+      { label: "Integração Whatsapp", href: "/admin/configuracoes/whatsapp" },
+    ],
   },
 ];
 
