@@ -87,10 +87,16 @@ export default function ServiceManagementPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [invoiceService, setInvoiceService] = useState<Service | null>(null);
+  const [invoiceProvider, setInvoiceProvider] = useState<"infinitipay" | "cora">(
+    "infinitipay"
+  );
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [invoiceResult, setInvoiceResult] = useState<{
-    link: string;
-    slug: string;
+    link?: string;
+    slug?: string;
+    documentUrl?: string;
+    barcode?: string;
+    digitableLine?: string;
   } | null>(null);
   const [invoiceError, setInvoiceError] = useState<string | null>(null);
   const [invoiceErrorDetails, setInvoiceErrorDetails] = useState<string | null>(null);
@@ -223,7 +229,12 @@ export default function ServiceManagementPage() {
     setInvoiceErrorDetails(null);
 
     try {
-      const res = await fetch("/api/infinitipay/create-link", {
+      const endpoint =
+        invoiceProvider === "cora"
+          ? "/api/cora/create-boleto"
+          : "/api/infinitipay/create-link";
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -239,6 +250,16 @@ export default function ServiceManagementPage() {
         setInvoiceErrorDetails(
           data.details ? JSON.stringify(data.details, null, 2) : null
         );
+      } else if (invoiceProvider === "cora") {
+        if (data.documentUrl || data.coraResponse?.document_url) {
+          setInvoiceResult({
+            documentUrl: data.documentUrl || data.coraResponse?.document_url,
+            barcode: data.barcode || data.coraResponse?.barcode,
+            digitableLine: data.digitableLine || data.coraResponse?.digitable_line,
+          });
+        } else {
+          setInvoiceError("Boleto não retornado pela Cora");
+        }
       } else if (data.link) {
         setInvoiceResult({ link: data.link, slug: data.slug || "" });
       } else {
@@ -253,6 +274,7 @@ export default function ServiceManagementPage() {
 
   const closeInvoiceModal = () => {
     setInvoiceService(null);
+    setInvoiceProvider("infinitipay");
     setInvoiceResult(null);
     setInvoiceError(null);
     setInvoiceErrorDetails(null);
@@ -811,6 +833,35 @@ export default function ServiceManagementPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                Meio de pagamento
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setInvoiceProvider("infinitipay")}
+                  className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
+                    invoiceProvider === "infinitipay"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  }`}
+                >
+                  InfinitePay
+                </button>
+                <button
+                  onClick={() => setInvoiceProvider("cora")}
+                  className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
+                    invoiceProvider === "cora"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  }`}
+                >
+                  Cora (boleto)
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-gray-400">
                 <span>Cliente</span>
@@ -842,7 +893,7 @@ export default function ServiceManagementPage() {
                 </div>
                 {invoiceErrorDetails && (
                   <pre className="text-xs bg-red-500/5 p-2 rounded-lg overflow-auto max-h-32 text-red-300">
-                    {JSON.stringify(invoiceErrorDetails, null, 2)}
+                    {invoiceErrorDetails}
                   </pre>
                 )}
               </div>
@@ -854,23 +905,63 @@ export default function ServiceManagementPage() {
                   <CheckCircle2 className="w-4 h-4" />
                   Fatura gerada com sucesso!
                 </p>
-                <div>
-                  <p className="text-gray-400 text-xs mb-1">Link de pagamento</p>
-                  <a
-                    href={invoiceResult.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-400 hover:text-blue-300 break-all"
-                  >
-                    {invoiceResult.link}
-                  </a>
-                </div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(invoiceResult.link)}
-                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  Copiar link
-                </button>
+
+                {invoiceProvider === "infinitipay" && invoiceResult.link && (
+                  <>
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">Link de pagamento</p>
+                      <a
+                        href={invoiceResult.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-400 hover:text-blue-300 break-all"
+                      >
+                        {invoiceResult.link}
+                      </a>
+                    </div>
+                    <button
+                      onClick={() =>
+                        invoiceResult.link && navigator.clipboard.writeText(invoiceResult.link)
+                      }
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Copiar link
+                    </button>
+                  </>
+                )}
+
+                {invoiceProvider === "cora" && invoiceResult.documentUrl && (
+                  <>
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">PDF do boleto</p>
+                      <a
+                        href={invoiceResult.documentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-400 hover:text-blue-300 break-all"
+                      >
+                        {invoiceResult.documentUrl}
+                      </a>
+                    </div>
+                    {invoiceResult.digitableLine && (
+                      <div>
+                        <p className="text-gray-400 text-xs mb-1">Linha digitável</p>
+                        <p className="text-sm text-white break-all font-mono">
+                          {invoiceResult.digitableLine}
+                        </p>
+                      </div>
+                    )}
+                    <button
+                      onClick={() =>
+                        invoiceResult.digitableLine &&
+                        navigator.clipboard.writeText(invoiceResult.digitableLine)
+                      }
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Copiar linha digitável
+                    </button>
+                  </>
+                )}
               </div>
             )}
 

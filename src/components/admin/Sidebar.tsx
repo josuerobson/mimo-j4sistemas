@@ -75,6 +75,7 @@ const menuItems: MenuItem[] = [
     children: [
       { label: "Integração Whatsapp", href: "/admin/configuracoes/whatsapp" },
       { label: "Integração InfinitiPay", href: "/admin/configuracoes/infinitipay" },
+      { label: "Integração Cora", href: "/admin/configuracoes/cora" },
     ],
   },
 ];
