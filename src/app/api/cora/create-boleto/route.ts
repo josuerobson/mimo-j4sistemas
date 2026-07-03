@@ -104,15 +104,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const hostname =
+    const tokenHostname =
       environment === "production"
         ? "matls-clients.api.cora.com.br"
         : "matls-clients.api.stage.cora.com.br";
+    const apiHostname =
+      environment === "production"
+        ? "api.cora.com.br"
+        : "api.stage.cora.com.br";
 
     // 1. Obter token de acesso
     const tokenRes = await coraRequest({
       method: "POST",
-      hostname,
+      hostname: tokenHostname,
       path: "/token",
       cert: certificate,
       key: privateKey,
@@ -146,28 +150,45 @@ export async function POST(request: Request) {
     const code = `SVC-${service.id}-${Date.now()}`;
 
     const document = service.client.document?.replace(/\D/g, "");
-    const documentType = document && document.length === 14 ? "CNPJ" : "CPF";
+    if (!document || (document.length !== 11 && document.length !== 14)) {
+      return NextResponse.json(
+        {
+          error:
+            "Cliente não possui CPF/CNPJ válido cadastrado. É obrigatório para emissão de boleto na Cora.",
+        },
+        { status: 400 }
+      );
+    }
+    const documentType = document.length === 14 ? "CNPJ" : "CPF";
+
+    const zipCode = (service.client.zipCode || "").replace(/\D/g, "");
+    if (!service.client.address || !service.client.city || !service.client.state || zipCode.length !== 8) {
+      return NextResponse.json(
+        {
+          error:
+            "Endereço incompleto. Preencha rua, cidade, estado e CEP com 8 dígitos no cadastro do cliente.",
+        },
+        { status: 400 }
+      );
+    }
 
     const customerPayload: Record<string, unknown> = {
-      name: service.client.name,
+      name: service.client.name.slice(0, 60),
       email: service.client.email,
       document: {
-        identity: document || "00000000000",
+        identity: document,
         type: documentType,
       },
+      address: {
+        street: service.client.address.slice(0, 100),
+        number: (service.client.number || "S/N").slice(0, 20),
+        district: (service.client.neighborhood || service.client.city || "N/A").slice(0, 60),
+        city: service.client.city.slice(0, 60),
+        state: (service.client.state || "SP").slice(0, 2).toUpperCase(),
+        complement: (service.client.complement || "N/A").slice(0, 60),
+        zip_code: zipCode,
+      },
     };
-
-    if (service.client.address) {
-      customerPayload.address = {
-        street: service.client.address,
-        number: "S/N",
-        district: service.client.city || "N/A",
-        city: service.client.city || "N/A",
-        state: service.client.state || "SP",
-        complement: "N/A",
-        zip_code: (service.client.zipCode || "00000000").replace(/\D/g, ""),
-      };
-    }
 
     const paymentTerms: Record<string, unknown> = {
       due_date: dueDateStr,
@@ -195,13 +216,14 @@ export async function POST(request: Request) {
       ? config.cora_payment_forms.split(",").map((s: string) => s.trim())
       : ["BANK_SLIP"];
 
+    const description = `${service.type} - ${service.client.name}`.slice(0, 100);
     const invoicePayload = {
       code,
       customer: customerPayload,
       services: [
         {
-          name: service.type,
-          description: `${service.type} - ${service.client.name}`,
+          name: service.type.slice(0, 60),
+          description,
           amount: amountInCents,
         },
       ],
@@ -214,7 +236,7 @@ export async function POST(request: Request) {
     // 3. Criar boleto na Cora
     const invoiceRes = await coraRequest({
       method: "POST",
-      hostname,
+      hostname: apiHostname,
       path: "/v2/invoices",
       cert: certificate,
       key: privateKey,
@@ -241,11 +263,30 @@ export async function POST(request: Request) {
 
     const responseData = invoiceRes.data as {
       id?: string;
-      document_url?: string;
       status?: string;
-      barcode?: string;
-      digitable_line?: string;
+      payment_options?: {
+        bank_slip?: {
+          url?: string;
+          barcode?: string;
+          digitable?: string;
+        };
+      };
     };
+
+    const bankSlip = responseData.payment_options?.bank_slip;
+    const documentUrl = bankSlip?.url || null;
+    const barcode = bankSlip?.barcode || null;
+    const digitableLine = bankSlip?.digitable || null;
+
+    if (!documentUrl) {
+      return NextResponse.json(
+        {
+          error: "Boleto não retornado pela Cora",
+          details: invoiceRes.data,
+        },
+        { status: 502 }
+      );
+    }
 
     const invoice = await prisma.invoice.create({
       data: {
@@ -254,7 +295,7 @@ export async function POST(request: Request) {
         status: "pendente",
         provider: "cora",
         externalId: responseData.id || null,
-        documentUrl: responseData.document_url || null,
+        documentUrl,
         orderNsu: code,
       },
     });
@@ -262,9 +303,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       invoice,
-      documentUrl: responseData.document_url || null,
-      barcode: responseData.barcode || null,
-      digitableLine: responseData.digitable_line || null,
+      documentUrl,
+      barcode,
+      digitableLine,
       coraResponse: responseData,
     });
   } catch (error) {
