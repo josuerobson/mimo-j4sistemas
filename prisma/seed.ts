@@ -71,9 +71,13 @@ async function main() {
   ];
 
   for (const lead of sampleLeads) {
-    await prisma.lead.create({ data: lead });
+    await prisma.lead.upsert({
+      where: { email: lead.email },
+      update: {},
+      create: lead,
+    });
   }
-  console.log(`✅ ${sampleLeads.length} sample leads created`);
+  console.log(`✅ ${sampleLeads.length} sample leads ready`);
 
   // Create sample clients
   const sampleClients = [
@@ -121,10 +125,62 @@ async function main() {
     },
   ];
 
+  const upsertedClients = [];
   for (const client of sampleClients) {
-    await prisma.client.create({ data: client });
+    const upserted = await prisma.client.upsert({
+      where: { email: client.email },
+      update: {},
+      create: client,
+    });
+    upsertedClients.push(upserted);
   }
-  console.log(`✅ ${sampleClients.length} sample clients created`);
+  console.log(`✅ ${upsertedClients.length} sample clients ready`);
+
+  // Create sample services linked to clients
+  const clientByEmail = Object.fromEntries(
+    upsertedClients.map((c) => [c.email, c.id])
+  );
+
+  const sampleServices = [
+    {
+      id: "svc-hospedagem-carlos",
+      clientId: clientByEmail["carlos@techvendas.com.br"],
+      type: "hospedagem",
+      amount: 149.9,
+      cycle: "mensal",
+      lastPaymentDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      status: "ativo",
+    },
+    {
+      id: "svc-vps-marina",
+      clientId: clientByEmail["marina@clinicasaude.com.br"],
+      type: "vps",
+      amount: 299.0,
+      cycle: "mensal",
+      lastPaymentDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      status: "ativo",
+    },
+    {
+      id: "svc-dedicado-roberto",
+      clientId: clientByEmail["roberto@logexpress.com.br"],
+      type: "dedicado",
+      amount: 1599.9,
+      cycle: "trimestral",
+      lastPaymentDate: new Date(Date.now() - 80 * 24 * 60 * 60 * 1000),
+      status: "ativo",
+    },
+  ];
+
+  for (const service of sampleServices) {
+    if (service.clientId) {
+      await prisma.service.upsert({
+        where: { id: service.id },
+        update: {},
+        create: service,
+      });
+    }
+  }
+  console.log(`✅ ${sampleServices.length} sample services ready`);
 
   console.log("🎉 Seeding complete!");
 }

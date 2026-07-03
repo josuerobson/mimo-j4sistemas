@@ -22,7 +22,7 @@ model User {
 model Lead {
   id        String   @id @default(cuid())
   name      String
-  email     String
+  email     String   @unique
   phone     String
   company   String?
   service   String
@@ -41,7 +41,7 @@ model Lead {
 model Client {
   id        String   @id @default(cuid())
   name      String
-  email     String
+  email     String   @unique
   phone     String
   company   String?
   document  String?
@@ -55,7 +55,26 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  services Service[]
+
   @@map("clients")
+}
+
+model Service {
+  id               String   @id @default(cuid())
+  clientId         String
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type             String   // hospedagem, vps, dedicado
+  amount           Decimal  @db.Decimal(10, 2)
+  cycle            String   // mensal, bimestral, trimestral, semestral, anual
+  lastPaymentDate  DateTime
+  status           String   @default("ativo") // ativo, suspenso, cancelado
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@map("services")
 }
 
 model ChatConversation {

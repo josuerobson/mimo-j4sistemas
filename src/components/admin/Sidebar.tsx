@@ -16,7 +16,7 @@ import {
   LogOut,
   Code2,
   BarChart3,
-  FolderOpen,
+  Briefcase,
   MessagesSquare,
 } from "lucide-react";
 
@@ -46,9 +46,9 @@ const menuItems: MenuItem[] = [
     href: "/admin/clientes",
   },
   {
-    label: "Projetos",
-    icon: <FolderOpen className="w-5 h-5" />,
-    href: "/admin/projetos",
+    label: "Gestão de serviços",
+    icon: <Briefcase className="w-5 h-5" />,
+    href: "/admin/gestao-servicos",
   },
   {
     label: "Mensagens",
