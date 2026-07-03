@@ -46,7 +46,7 @@ const menuItems: MenuItem[] = [
     href: "/admin/clientes",
   },
   {
-    label: "Gestão de serviços",
+    label: "Cobranças recorrentes",
     icon: <Briefcase className="w-5 h-5" />,
     href: "/admin/gestao-servicos",
   },
