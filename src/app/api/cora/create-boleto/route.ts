@@ -130,19 +130,15 @@ export async function POST(request: Request) {
     console.log("[Cora] certificate header:", certificate.split("\n")[0]);
     console.log("[Cora] private key header:", privateKey.split("\n")[0]);
 
-    const tokenHostname =
+    const hostname =
       environment === "production"
         ? "matls-clients.api.cora.com.br"
         : "matls-clients.api.stage.cora.com.br";
-    const apiHostname =
-      environment === "production"
-        ? "api.cora.com.br"
-        : "api.stage.cora.com.br";
 
     // 1. Obter token de acesso
     const tokenRes = await coraRequest({
       method: "POST",
-      hostname: tokenHostname,
+      hostname,
       path: "/token",
       cert: certificate,
       key: privateKey,
@@ -262,7 +258,7 @@ export async function POST(request: Request) {
     // 3. Criar boleto na Cora
     const invoiceRes = await coraRequest({
       method: "POST",
-      hostname: apiHostname,
+      hostname,
       path: "/v2/invoices",
       cert: certificate,
       key: privateKey,
