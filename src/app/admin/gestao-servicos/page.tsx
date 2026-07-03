@@ -87,6 +87,12 @@ export default function ServiceManagementPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [invoiceService, setInvoiceService] = useState<Service | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [invoiceResult, setInvoiceResult] = useState<{
+    link: string;
+    slug: string;
+  } | null>(null);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   const fetchServices = () => {
     setLoading(true);
@@ -206,6 +212,44 @@ export default function ServiceManagementPage() {
     });
     fetchServices();
     setActionMenuId(null);
+  };
+
+  const generateInvoice = async () => {
+    if (!invoiceService) return;
+    setGeneratingInvoice(true);
+    setInvoiceResult(null);
+    setInvoiceError(null);
+
+    try {
+      const res = await fetch("/api/infinitipay/create-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId: invoiceService.id,
+          description: `${getTypeLabel(invoiceService.type)} - ${invoiceService.client.name}`,
+          orderNsu: `SVC-${invoiceService.id}-${Date.now()}`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setInvoiceError(data.error || "Erro ao gerar fatura");
+      } else if (data.link) {
+        setInvoiceResult({ link: data.link, slug: data.slug || "" });
+      } else {
+        setInvoiceError("Link de pagamento não retornado pela InfinitePay");
+      }
+    } catch {
+      setInvoiceError("Erro ao comunicar com o servidor");
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
+
+  const closeInvoiceModal = () => {
+    setInvoiceService(null);
+    setInvoiceResult(null);
+    setInvoiceError(null);
   };
 
   const formatCurrency = (value: number) => {
@@ -755,7 +799,7 @@ export default function ServiceManagementPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Gerar fatura</h2>
               <button
-                onClick={() => setInvoiceService(null)}
+                onClick={closeInvoiceModal}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -783,21 +827,62 @@ export default function ServiceManagementPage() {
                 <span className="text-white">{formatDate(invoiceService.nextRenewalDate)}</span>
               </div>
             </div>
-            <p className="mt-4 text-sm text-gray-400">
-              A funcionalidade de emissão de fatura será integrada ao módulo financeiro futuramente. Por enquanto, use este resumo para gerar a cobrança manualmente.
-            </p>
+
+            {invoiceError && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                {invoiceError}
+              </div>
+            )}
+
+            {invoiceResult && (
+              <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-3">
+                <p className="text-emerald-400 text-sm font-medium flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Fatura gerada com sucesso!
+                </p>
+                <div>
+                  <p className="text-gray-400 text-xs mb-1">Link de pagamento</p>
+                  <a
+                    href={invoiceResult.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-400 hover:text-blue-300 break-all"
+                  >
+                    {invoiceResult.link}
+                  </a>
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(invoiceResult.link)}
+                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Copiar link
+                </button>
+              </div>
+            )}
+
             <div className="mt-6 flex justify-end gap-3">
               <button
-                onClick={() => setInvoiceService(null)}
+                onClick={closeInvoiceModal}
                 className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors text-sm"
               >
                 Fechar
               </button>
               <button
-                onClick={() => setInvoiceService(null)}
-                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors text-sm font-medium"
+                onClick={generateInvoice}
+                disabled={generatingInvoice || !!invoiceResult}
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl transition-colors text-sm font-medium"
               >
-                Confirmar
+                {generatingInvoice ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Gerando...
+                  </span>
+                ) : invoiceResult ? (
+                  "Fatura gerada"
+                ) : (
+                  "Gerar fatura"
+                )}
               </button>
             </div>
           </div>

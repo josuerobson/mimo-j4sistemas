@@ -74,6 +74,7 @@ const menuItems: MenuItem[] = [
     icon: <Settings className="w-5 h-5" />,
     children: [
       { label: "Integração Whatsapp", href: "/admin/configuracoes/whatsapp" },
+      { label: "Integração InfinitiPay", href: "/admin/configuracoes/infinitipay" },
     ],
   },
 ];
