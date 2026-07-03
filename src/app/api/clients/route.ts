@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, email, phone, company, document, address, city, state, zipCode, notes, status } =
+    const { name, email, phone, company, document, address, neighborhood, number, complement, city, state, zipCode, notes, status } =
       body;
 
     if (!name || !email || !phone) {
@@ -51,6 +51,9 @@ export async function POST(request: Request) {
       company,
       document,
       address,
+      neighborhood,
+      number,
+      complement,
       city,
       state,
       zipCode,
@@ -77,7 +80,7 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, email, phone, company, document, address, city, state, zipCode, notes, status } =
+    const { id, name, email, phone, company, document, address, neighborhood, number, complement, city, state, zipCode, notes, status } =
       body;
 
     if (!id) {
@@ -94,6 +97,9 @@ export async function PATCH(request: Request) {
       company,
       document,
       address,
+      neighborhood,
+      number,
+      complement,
       city,
       state,
       zipCode,

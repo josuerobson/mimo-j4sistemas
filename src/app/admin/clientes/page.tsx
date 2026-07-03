@@ -33,6 +33,9 @@ interface Client {
   company: string | null;
   document: string | null;
   address: string | null;
+  neighborhood: string | null;
+  number: string | null;
+  complement: string | null;
   city: string | null;
   state: string | null;
   zipCode: string | null;
@@ -57,6 +60,9 @@ const emptyForm = {
   company: "",
   document: "",
   address: "",
+  neighborhood: "",
+  number: "",
+  complement: "",
   city: "",
   state: "",
   zipCode: "",
@@ -112,6 +118,9 @@ export default function ClientsPage() {
         company: client.company || "",
         document: client.document || "",
         address: client.address || "",
+        neighborhood: client.neighborhood || "",
+        number: client.number || "",
+        complement: client.complement || "",
         city: client.city || "",
         state: client.state || "",
         zipCode: client.zipCode || "",
@@ -703,13 +712,43 @@ export default function ClientsPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-sm text-gray-400">Endereço</label>
+                  <label className="text-sm text-gray-400">Endereço (rua)</label>
                   <input
                     type="text"
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
-                    placeholder="Rua, número, bairro"
+                    placeholder="Rua, avenida"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-gray-400">Bairro</label>
+                  <input
+                    type="text"
+                    value={form.neighborhood}
+                    onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
+                    placeholder="Bairro"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-gray-400">Número</label>
+                  <input
+                    type="text"
+                    value={form.number}
+                    onChange={(e) => setForm({ ...form, number: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
+                    placeholder="123"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-gray-400">Complemento</label>
+                  <input
+                    type="text"
+                    value={form.complement}
+                    onChange={(e) => setForm({ ...form, complement: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
+                    placeholder="Apto, sala, bloco"
                   />
                 </div>
                 <div className="space-y-1.5">

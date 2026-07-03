@@ -10,6 +10,9 @@ export interface Client {
   company: string | null;
   document: string | null;
   address: string | null;
+  neighborhood: string | null;
+  number: string | null;
+  complement: string | null;
   city: string | null;
   state: string | null;
   zipCode: string | null;
@@ -27,6 +30,9 @@ export interface ClientInput {
   company?: string | null;
   document?: string | null;
   address?: string | null;
+  neighborhood?: string | null;
+  number?: string | null;
+  complement?: string | null;
   city?: string | null;
   state?: string | null;
   zipCode?: string | null;
@@ -43,6 +49,9 @@ function mapClient(c: {
   company: string | null;
   document: string | null;
   address: string | null;
+  neighborhood: string | null;
+  number: string | null;
+  complement: string | null;
   city: string | null;
   state: string | null;
   zipCode: string | null;
@@ -60,6 +69,9 @@ function mapClient(c: {
     company: c.company,
     document: c.document,
     address: c.address,
+    neighborhood: c.neighborhood,
+    number: c.number,
+    complement: c.complement,
     city: c.city,
     state: c.state,
     zipCode: c.zipCode,
@@ -95,6 +107,9 @@ export async function createClient(input: ClientInput): Promise<Client> {
       company: input.company ?? null,
       document: input.document ?? null,
       address: input.address ?? null,
+      neighborhood: input.neighborhood ?? null,
+      number: input.number ?? null,
+      complement: input.complement ?? null,
       city: input.city ?? null,
       state: input.state ?? null,
       zipCode: input.zipCode ?? null,
@@ -120,6 +135,9 @@ export async function updateClient(
         company: input.company ?? null,
         document: input.document ?? null,
         address: input.address ?? null,
+        neighborhood: input.neighborhood ?? null,
+        number: input.number ?? null,
+        complement: input.complement ?? null,
         city: input.city ?? null,
         state: input.state ?? null,
         zipCode: input.zipCode ?? null,

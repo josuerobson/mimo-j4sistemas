@@ -61,11 +61,36 @@ export async function POST(request: Request) {
     if (config.infinitipay_webhook_url) payload.webhook_url = config.infinitipay_webhook_url;
 
     if (service.client) {
+      const rawPhone = service.client.phone?.replace(/\D/g, "") || "";
+      const phoneNumber =
+        rawPhone.length === 11
+          ? `+55${rawPhone}`
+          : rawPhone.length === 10
+          ? `+55${rawPhone}`
+          : rawPhone.length === 13 && rawPhone.startsWith("55")
+          ? `+${rawPhone}`
+          : rawPhone.startsWith("+")
+          ? rawPhone
+          : rawPhone
+          ? `+55${rawPhone}`
+          : undefined;
+
       payload.customer = {
         name: service.client.name,
         email: service.client.email || undefined,
-        phone_number: service.client.phone || undefined,
+        phone_number: phoneNumber,
       };
+
+      const zip = service.client.zipCode?.replace(/\D/g, "");
+      if (service.client.address || zip) {
+        payload.address = {
+          cep: zip || undefined,
+          street: service.client.address || undefined,
+          neighborhood: service.client.neighborhood || undefined,
+          number: service.client.number || undefined,
+          complement: service.client.complement || undefined,
+        };
+      }
     }
 
     console.log("[InfinitiPay] Payload:", JSON.stringify(payload, null, 2));
