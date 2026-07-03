@@ -647,7 +647,7 @@ export default function ServiceManagementPage() {
         {/* Table */}
         <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-gray-800">
-            <h2 className="text-lg font-semibold text-white">Relatório de serviços</h2>
+            <h2 className="text-lg font-semibold text-white">Relatorio de cobranças recorrentes</h2>
             <span className="text-sm text-gray-400">
               {filteredServices.length} serviço(s)
             </span>
@@ -757,57 +757,61 @@ export default function ServiceManagementPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="relative inline-block">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setActionMenuId(
-                                  actionMenuId === service.id ? null : service.id
-                                );
+                                setInvoiceService(service);
                               }}
-                              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                              className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+                              title="Gerar fatura"
                             >
-                              <span className="sr-only">Ações</span>
-                              <svg
-                                className="w-5 h-5"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                              </svg>
+                              <FileText className="w-4 h-4" />
+                              Gerar fatura
                             </button>
 
-                            {actionMenuId === service.id && (
-                              <div className="absolute right-0 mt-1 w-48 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-10 py-1">
-                                <button
-                                  onClick={() => {
-                                    setActionMenuId(null);
-                                    setInvoiceService(service);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                            <div className="relative inline-block">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActionMenuId(
+                                    actionMenuId === service.id ? null : service.id
+                                  );
+                                }}
+                                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                              >
+                                <span className="sr-only">Ações</span>
+                                <svg
+                                  className="w-5 h-5"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
                                 >
-                                  <FileText className="w-4 h-4" />
-                                  Gerar fatura
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setActionMenuId(null);
-                                    openForm(service);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                  Editar
-                                </button>
-                                <button
-                                  onClick={() => deleteService(service.id)}
-                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-800 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Excluir
-                                </button>
-                              </div>
-                            )}
+                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                </svg>
+                              </button>
+
+                              {actionMenuId === service.id && (
+                                <div className="absolute right-0 mt-1 w-48 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-10 py-1">
+                                  <button
+                                    onClick={() => {
+                                      setActionMenuId(null);
+                                      openForm(service);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => deleteService(service.id)}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-800 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Excluir
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
