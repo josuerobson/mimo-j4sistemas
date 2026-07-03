@@ -90,11 +90,11 @@ export async function POST(request: Request) {
     );
 
     const clientId = config.cora_client_id?.trim();
-    const certificate = config.cora_certificate?.trim();
-    const privateKey = config.cora_private_key?.trim();
+    const rawCertificate = config.cora_certificate?.trim();
+    const rawPrivateKey = config.cora_private_key?.trim();
     const environment = config.cora_environment?.trim() || "stage";
 
-    if (!clientId || !certificate || !privateKey) {
+    if (!clientId || !rawCertificate || !rawPrivateKey) {
       return NextResponse.json(
         {
           error:
@@ -103,6 +103,32 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // Garantir que certificado e chave privada tenham as quebras de linha corretas
+    const normalizePem = (pem: string, header: string, footer: string) => {
+      const content = pem
+        .replace(/-----BEGIN[^-]*-----/g, "")
+        .replace(/-----END[^-]*-----/g, "")
+        .replace(/\s+/g, "")
+        .trim();
+      const lines = content.match(/.{1,64}/g)?.join("\n") || content;
+      return `${header}\n${lines}\n${footer}`;
+    };
+
+    const certificate = normalizePem(
+      rawCertificate,
+      "-----BEGIN CERTIFICATE-----",
+      "-----END CERTIFICATE-----"
+    );
+    const privateKey = normalizePem(
+      rawPrivateKey,
+      "-----BEGIN RSA PRIVATE KEY-----",
+      "-----END RSA PRIVATE KEY-----"
+    );
+
+    console.log("[Cora] clientId prefix:", clientId.slice(0, 10));
+    console.log("[Cora] certificate header:", certificate.split("\n")[0]);
+    console.log("[Cora] private key header:", privateKey.split("\n")[0]);
 
     const tokenHostname =
       environment === "production"
