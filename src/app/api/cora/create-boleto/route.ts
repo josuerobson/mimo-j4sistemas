@@ -136,7 +136,7 @@ export async function POST(request: Request) {
       "-----END RSA PRIVATE KEY-----"
     );
 
-    console.log("[Cora] clientId prefix:", clientId.slice(0, 10));
+    console.log("[Cora] clientId:", clientId);
     console.log("[Cora] certificate header:", certificate.split("\n")[0]);
     console.log("[Cora] private key header:", privateKey.split("\n")[0]);
     console.log("[Cora] certificate chars:", certificate.length);
@@ -167,6 +167,13 @@ export async function POST(request: Request) {
         : "matls-clients.api.stage.cora.com.br";
 
     // 1. Obter token de acesso
+    const tokenUrl = `https://${hostname}/token`;
+    const tokenBody = `grant_type=client_credentials&client_id=${encodeURIComponent(
+      clientId
+    )}&scope=offline_access`;
+    console.log("[Cora] Token URL:", tokenUrl);
+    console.log("[Cora] Token body:", tokenBody);
+
     const tokenRes = await coraRequest({
       method: "POST",
       hostname,
@@ -176,9 +183,7 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: `grant_type=client_credentials&client_id=${encodeURIComponent(
-        clientId
-      )}`,
+      body: tokenBody,
     });
 
     console.log("[Cora] Token response status:", tokenRes.status);
