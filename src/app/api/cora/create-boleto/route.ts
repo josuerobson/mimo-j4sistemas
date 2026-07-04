@@ -19,14 +19,19 @@ function coraRequest(options: CoraRequestOptions): Promise<{
   data: unknown;
 }> {
   return new Promise((resolve, reject) => {
+    const agent = new https.Agent({
+      cert: options.cert,
+      key: options.key,
+      rejectUnauthorized: true,
+    });
+
     const req = https.request(
       {
         hostname: options.hostname,
         path: options.path,
         method: options.method,
-        cert: options.cert,
-        key: options.key,
         headers: options.headers,
+        agent,
       },
       (res) => {
         let body = "";
