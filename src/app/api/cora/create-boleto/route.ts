@@ -105,8 +105,13 @@ export async function POST(request: Request) {
     }
 
     // Garantir que certificado e chave privada tenham as quebras de linha corretas
-    const normalizePem = (pem: string, header: string, footer: string) => {
-      const content = pem
+    const normalizePem = (pem: string, defaultHeader: string, defaultFooter: string) => {
+      const trimmed = pem.trim();
+      const headerMatch = trimmed.match(/-----BEGIN ([^-]+)-----/);
+      const footerMatch = trimmed.match(/-----END ([^-]+)-----/);
+      const header = headerMatch ? `-----BEGIN ${headerMatch[1]}-----` : defaultHeader;
+      const footer = footerMatch ? `-----END ${footerMatch[1]}-----` : defaultFooter;
+      const content = trimmed
         .replace(/-----BEGIN[^-]*-----/g, "")
         .replace(/-----END[^-]*-----/g, "")
         .replace(/\s+/g, "")
@@ -129,6 +134,8 @@ export async function POST(request: Request) {
     console.log("[Cora] clientId prefix:", clientId.slice(0, 10));
     console.log("[Cora] certificate header:", certificate.split("\n")[0]);
     console.log("[Cora] private key header:", privateKey.split("\n")[0]);
+    console.log("[Cora] certificate chars:", certificate.length);
+    console.log("[Cora] private key chars:", privateKey.length);
 
     const hostname =
       environment === "production"
@@ -149,6 +156,9 @@ export async function POST(request: Request) {
         clientId
       )}`,
     });
+
+    console.log("[Cora] Token response status:", tokenRes.status);
+    console.log("[Cora] Token response body:", JSON.stringify(tokenRes.data, null, 2));
 
     if (tokenRes.status !== 200 || !(tokenRes.data as { access_token?: string })?.access_token) {
       return NextResponse.json(
