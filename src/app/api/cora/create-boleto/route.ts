@@ -17,6 +17,7 @@ interface CoraRequestOptions {
 function coraRequest(options: CoraRequestOptions): Promise<{
   status: number;
   data: unknown;
+  headers?: Record<string, string | string[]>;
 }> {
   return new Promise((resolve, reject) => {
     const agent = new https.Agent({
@@ -37,11 +38,15 @@ function coraRequest(options: CoraRequestOptions): Promise<{
         let body = "";
         res.on("data", (chunk) => (body += chunk));
         res.on("end", () => {
+          const responseHeaders: Record<string, string | string[]> = {};
+          for (const [key, value] of Object.entries(res.headers)) {
+            if (value !== undefined) responseHeaders[key] = value;
+          }
           try {
             const data = body ? JSON.parse(body) : null;
-            resolve({ status: res.statusCode || 0, data });
+            resolve({ status: res.statusCode || 0, data, headers: responseHeaders });
           } catch {
-            resolve({ status: res.statusCode || 0, data: body });
+            resolve({ status: res.statusCode || 0, data: body, headers: responseHeaders });
           }
         });
       }
@@ -187,6 +192,7 @@ export async function POST(request: Request) {
     });
 
     console.log("[Cora] Token response status:", tokenRes.status);
+    console.log("[Cora] Token response headers:", JSON.stringify(tokenRes.headers, null, 2));
     console.log("[Cora] Token response body:", JSON.stringify(tokenRes.data, null, 2));
 
     if (tokenRes.status !== 200 || !(tokenRes.data as { access_token?: string })?.access_token) {
