@@ -170,7 +170,7 @@ export async function POST(request: Request) {
     const tokenUrl = `https://${hostname}/token`;
     const tokenBody = `grant_type=client_credentials&client_id=${encodeURIComponent(
       clientId
-    )}&scope=offline_access`;
+    )}`;
     console.log("[Cora] Token URL:", tokenUrl);
     console.log("[Cora] Token body:", tokenBody);
 
