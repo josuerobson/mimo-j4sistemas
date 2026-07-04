@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
 import https from "https";
-import { randomUUID } from "crypto";
+import crypto, { randomUUID } from "crypto";
 
 interface CoraRequestOptions {
   method: string;
@@ -141,6 +141,25 @@ export async function POST(request: Request) {
     console.log("[Cora] private key header:", privateKey.split("\n")[0]);
     console.log("[Cora] certificate chars:", certificate.length);
     console.log("[Cora] private key chars:", privateKey.length);
+
+    try {
+      const certObj = new crypto.X509Certificate(certificate);
+      const publicKey = crypto.createPublicKey(certificate);
+      const privateKeyObj = crypto.createPrivateKey(privateKey);
+      const derivedPublicKey = crypto.createPublicKey(privateKeyObj);
+      const publicKeyDer = publicKey.export({ format: "der", type: "spki" });
+      const derivedPublicKeyDer = derivedPublicKey.export({ format: "der", type: "spki" });
+      const keysMatch = publicKeyDer.equals(derivedPublicKeyDer);
+      console.log("[Cora] certificate subject:", certObj.subject);
+      console.log("[Cora] certificate valid from:", certObj.validFrom);
+      console.log("[Cora] certificate valid to:", certObj.validTo);
+      console.log("[Cora] certificate and key match:", keysMatch);
+      if (!keysMatch) {
+        console.warn("[Cora] WARNING: certificate and private key do not match!");
+      }
+    } catch (err) {
+      console.error("[Cora] certificate/key validation error:", err);
+    }
 
     const hostname =
       environment === "production"
