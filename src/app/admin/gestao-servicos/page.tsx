@@ -87,7 +87,7 @@ export default function ServiceManagementPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [invoiceService, setInvoiceService] = useState<Service | null>(null);
-  const [invoiceProvider, setInvoiceProvider] = useState<"infinitipay" | "cora">(
+  const [invoiceProvider, setInvoiceProvider] = useState<"infinitipay" | "cora" | "mercadopago">(
     "infinitipay"
   );
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
@@ -232,6 +232,8 @@ export default function ServiceManagementPage() {
       const endpoint =
         invoiceProvider === "cora"
           ? "/api/cora/create-boleto"
+          : invoiceProvider === "mercadopago"
+          ? "/api/mercadopago/create-preference"
           : "/api/infinitipay/create-link";
 
       const res = await fetch(endpoint, {
@@ -259,6 +261,12 @@ export default function ServiceManagementPage() {
           });
         } else {
           setInvoiceError("Boleto não retornado pela Cora");
+        }
+      } else if (invoiceProvider === "mercadopago") {
+        if (data.link) {
+          setInvoiceResult({ link: data.link });
+        } else {
+          setInvoiceError("Link de pagamento não retornado pelo Mercado Pago");
         }
       } else if (data.link) {
         setInvoiceResult({ link: data.link, slug: data.slug || "" });
@@ -842,7 +850,7 @@ export default function ServiceManagementPage() {
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
                 Meio de pagamento
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setInvoiceProvider("infinitipay")}
                   className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
@@ -862,6 +870,16 @@ export default function ServiceManagementPage() {
                   }`}
                 >
                   Cora (boleto)
+                </button>
+                <button
+                  onClick={() => setInvoiceProvider("mercadopago")}
+                  className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
+                    invoiceProvider === "mercadopago"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  }`}
+                >
+                  Mercado Pago
                 </button>
               </div>
             </div>
@@ -910,7 +928,7 @@ export default function ServiceManagementPage() {
                   Fatura gerada com sucesso!
                 </p>
 
-                {invoiceProvider === "infinitipay" && invoiceResult.link && (
+                {(invoiceProvider === "infinitipay" || invoiceProvider === "mercadopago") && invoiceResult.link && (
                   <>
                     <div>
                       <p className="text-gray-400 text-xs mb-1">Link de pagamento</p>

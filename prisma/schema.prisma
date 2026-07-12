@@ -161,6 +161,14 @@ model CoraSetting {
   @@map("cora_settings")
 }
 
+model MercadoPagoSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("mercadopago_settings")
+}
+
 model Invoice {
   id             String   @id @default(cuid())
   serviceId      String
